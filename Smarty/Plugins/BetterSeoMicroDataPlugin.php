@@ -188,7 +188,13 @@ class BetterSeoMicroDataPlugin extends AbstractSmartyPlugin
     {
         $product->setLocale($lang->getLocale());
         $image = ProductImageQuery::create()->filterByProductId($product->getId())->orderByPosition()->find()->getFirst();
-        $pse = ProductSaleElementsQuery::create()->filterByProductId($product->getId())->filterByIsDefault(1)->findOne();
+
+        if (null !== $variant = $this->request->query->get('variant')) {
+            $pse = ProductSaleElementsQuery::create()->filterById($variant)->findOne();
+        } else {
+            $pse = ProductSaleElementsQuery::create()->filterByProductId($product->getId())->filterByIsDefault(1)->findOne();
+        }
+
         $psePrice = ProductPriceQuery::create()->filterByProductSaleElementsId($pse->getId())->findOne();
         $taxCountry = $this->taxEngine->getDeliveryCountry();
 
