@@ -1,0 +1,64 @@
+<?php
+
+namespace BetterSeo\API\Serializer;
+
+use BetterSeo\API\Resource\BetterSeo;
+use Thelia\Api\Resource\Product as ProductResource;
+use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
+
+class BetterSeoDenormalizer implements DenormalizerInterface
+{
+    public function denormalize(mixed $data, string $type, ?string $format = null, array $context = []): mixed
+    {
+        $resource = new BetterSeo();
+
+        if (isset($data['id'])) {
+            $resource->setId((int) $data['id']);
+        }
+
+        if (!isset($data['BetterSeo']) || !is_array($data['BetterSeo'])) {
+            return $resource;
+        }
+
+        if (!isset($data['BetterSeo']['i18ns']) || !is_array($data['BetterSeo']['i18ns'])) {
+            return $resource;
+        }
+
+        $i18nClass = BetterSeo::getI18nResourceClass();
+        foreach ($data['BetterSeo']['i18ns'] as $locale => $i18nData) {
+            $i18nResource = new $i18nClass();
+            $i18nResource->setLocale((string)$locale);
+            if (is_array($i18nData)) {
+                foreach ($i18nData as $field => $value) {
+                    $setter = 'set' . str_replace(' ', '', ucwords(str_replace('_', ' ', $field)));
+
+                    if (!method_exists($i18nResource, $setter)) {
+                        continue;
+                    }
+
+                    $i18nResource->$setter($value);
+                }
+            }
+            $resource->getI18ns()->add($i18nResource, (string)$locale);
+        }
+
+        return $resource;
+    }
+
+    public function supportsDenormalization(mixed $data, string $type, ?string $format = null, array $context = []): bool
+    {
+        return is_array($data)
+            && (
+                $type === BetterSeo::class
+            )
+            && (isset($data['BetterSeo']));
+    }
+
+    public function getSupportedTypes(?string $format): array
+    {
+        return [
+            BetterSeo::class => true,
+            ProductResource::class => true,
+        ];
+    }
+}
