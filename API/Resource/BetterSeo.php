@@ -11,7 +11,6 @@ use Propel\Runtime\Exception\PropelException;
 use Propel\Runtime\Map\TableMap;
 use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Serializer\Annotation\Ignore;
-use Thelia\Api\Bridge\Propel\Validator\I18nConstraint;
 use Thelia\Api\Resource\AbstractTranslatableResource;
 use Thelia\Api\Resource\I18nCollection;
 use Thelia\Api\Resource\Product as ProductResource;
@@ -24,7 +23,6 @@ class BetterSeo extends AbstractTranslatableResource implements ResourceAddonInt
     use ResourceAddonTrait;
 
     #[Groups([ProductResource::GROUP_ADMIN_READ, ProductResource::GROUP_ADMIN_WRITE, ProductResource::GROUP_FRONT_READ_SINGLE])]
-    #[I18nConstraint(groups: [ProductResource::GROUP_ADMIN_WRITE])]
     public I18nCollection $i18ns;
 
     #[Ignore]
@@ -54,6 +52,15 @@ class BetterSeo extends AbstractTranslatableResource implements ResourceAddonInt
      * No JOIN needed: better_seo uses a polymorphic relation (object_id/object_type),
      * not a direct Propel FK, so we load data in buildFromModel instead.
      */
+    public function buildFromArray(array $data, PropelResourceInterface $abstractPropelResource): ResourceAddonInterface
+    {
+        if (isset($data['i18ns'])) {
+            $this->setI18ns($data['i18ns']);
+        }
+
+        return $this;
+    }
+
     public static function extendQuery(ModelCriteria $query, Operation $operation = null, array $context = []): void
     {
     }
